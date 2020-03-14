@@ -1,0 +1,27 @@
+{
+  "name": "covid-growth",
+  "version": "1.0.0",
+  "description": "Coronavirus visualisations",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
+    "http-server": "^0.12.1",
+    "prettier": "^1.19.1",
+    "rollup": "^2.0.6",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-uglify": "^6.0.4"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "yarn build -w",
+    "build:watch:server": "http-server ./static & yarn build:watch",
+    "start": "yarn build:watch:server"
+  },
+  "dependencies": {
+    "d3": "^5.15.0",
+    "d3-fetch": "^1.1.2",
+    "d3-scale": "^3.2.1"
+  }
+}
