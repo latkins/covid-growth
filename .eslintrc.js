@@ -3,7 +3,7 @@ module.exports = {
         "browser": true,
         "es6": true
     },
-    "extends": "google",
+    "extends": "airbnb",
     "globals": {
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly"

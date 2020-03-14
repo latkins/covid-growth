@@ -33,6 +33,15 @@ const tidyData = (row) => {
     }
   }
   newRow['cases'] = dailyCases.sort((a, b) => a.date - b.date);
+  const geoUnit = newRow['Country/Region'];
+  const subGeoUnit = newRow['Province/State'];
+  let name;
+  if (geoUnit === subGeoUnit || subGeoUnit === '') {
+    name = geoUnit;
+  } else {
+    name = `${subGeoUnit}, ${geoUnit}`;
+  }
+  newRow['name'] = name;
 
   return newRow;
 };

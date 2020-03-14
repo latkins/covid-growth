@@ -4,12 +4,65 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Covid-19 Growth Curves</title>
-    <style type="text/css"></style>
+    <title>Covid-19</title>
+    <style type="text/css">
+      footer {
+        display: flex;
+        justify-content: center;
+      }
+      #visualisation {
+        display: flex;
+        justify-content: center;
+      }
+      #slider {
+        display: flex;
+        justify-content: center;
+      }
+
+      #wrapper > * {
+        display: flex;
+        justify-content: center;
+
+      }
+
+      .description {
+        display: flex;
+        justify-content: center;
+      }
+
+      .line {
+      }
+
+      .text {
+      }
+
+      .filtered {
+      }
+
+      .highlighted {
+      }
+
+    </style>
   </head>
   <body>
-    <div id="visualisation"></div>
+    <div class="description">
+      <p>
+        Data is aligned such that day 0 is the first day with 100 or more cases.
+        Data from
+        <a href="https://github.com/CSSEGISandData/COVID-19"
+          >https://github.com/CSSEGISandData/COVID-19</a
+        >.
+      </p>
+    </div>
+    <div id="wrapper">
+      <div id="slider"></div>
+      <div class="filter-wrapper"><label for="filter">Filter: </label><input id="filter" name="filter" type="text" value="China"></input></div>
+      <div class="highlight-wrapper"><label for="highlight">Filter: </label><input id="highlight" name="highlight" type="text" value="Kingdom"></input></div>
+      <div id="visualisation"></div>
+    </div>
     <script type="text/javascript" src="lib/index.js"></script>
   </body>
-  <footer></footer>
+  <footer>
+    Get in touch&nbsp<a href="https://twitter.com/latkins_">@latkins_</a>
+  </footer>
 </html>
