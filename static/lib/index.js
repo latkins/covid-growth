@@ -882,6 +882,8 @@ function selection_clone(deep) {
       : this.node().__data__;
 }var filterEvents = {};
 
+var event = null;
+
 if (typeof document !== "undefined") {
   var element = document.documentElement;
   if (!("onmouseenter" in element)) {
@@ -901,9 +903,12 @@ function filterContextListener(listener, index, group) {
 
 function contextListener(listener, index, group) {
   return function(event1) {
+    var event0 = event; // Events can be reentrant (e.g., focus).
+    event = event1;
     try {
       listener.call(this, this.__data__, index, group);
     } finally {
+      event = event0;
     }
   };
 }
@@ -4304,105 +4309,6 @@ function y(p) {
   };
 
   return line;
-}function sign(x) {
-  return x < 0 ? -1 : 1;
-}
-
-// Calculate the slopes of the tangents (Hermite-type interpolation) based on
-// the following paper: Steffen, M. 1990. A Simple Method for Monotonic
-// Interpolation in One Dimension. Astronomy and Astrophysics, Vol. 239, NO.
-// NOV(II), P. 443, 1990.
-function slope3(that, x2, y2) {
-  var h0 = that._x1 - that._x0,
-      h1 = x2 - that._x1,
-      s0 = (that._y1 - that._y0) / (h0 || h1 < 0 && -0),
-      s1 = (y2 - that._y1) / (h1 || h0 < 0 && -0),
-      p = (s0 * h1 + s1 * h0) / (h0 + h1);
-  return (sign(s0) + sign(s1)) * Math.min(Math.abs(s0), Math.abs(s1), 0.5 * Math.abs(p)) || 0;
-}
-
-// Calculate a one-sided slope.
-function slope2(that, t) {
-  var h = that._x1 - that._x0;
-  return h ? (3 * (that._y1 - that._y0) / h - t) / 2 : t;
-}
-
-// According to https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Representations
-// "you can express cubic Hermite interpolation in terms of cubic Bézier curves
-// with respect to the four values p0, p0 + m0 / 3, p1 - m1 / 3, p1".
-function point(that, t0, t1) {
-  var x0 = that._x0,
-      y0 = that._y0,
-      x1 = that._x1,
-      y1 = that._y1,
-      dx = (x1 - x0) / 3;
-  that._context.bezierCurveTo(x0 + dx, y0 + dx * t0, x1 - dx, y1 - dx * t1, x1, y1);
-}
-
-function MonotoneX(context) {
-  this._context = context;
-}
-
-MonotoneX.prototype = {
-  areaStart: function() {
-    this._line = 0;
-  },
-  areaEnd: function() {
-    this._line = NaN;
-  },
-  lineStart: function() {
-    this._x0 = this._x1 =
-    this._y0 = this._y1 =
-    this._t0 = NaN;
-    this._point = 0;
-  },
-  lineEnd: function() {
-    switch (this._point) {
-      case 2: this._context.lineTo(this._x1, this._y1); break;
-      case 3: point(this, this._t0, slope2(this, this._t0)); break;
-    }
-    if (this._line || (this._line !== 0 && this._point === 1)) this._context.closePath();
-    this._line = 1 - this._line;
-  },
-  point: function(x, y) {
-    var t1 = NaN;
-
-    x = +x, y = +y;
-    if (x === this._x1 && y === this._y1) return; // Ignore coincident points.
-    switch (this._point) {
-      case 0: this._point = 1; this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y); break;
-      case 1: this._point = 2; break;
-      case 2: this._point = 3; point(this, slope2(this, t1 = slope3(this, x, y)), t1); break;
-      default: point(this, this._t0, t1 = slope3(this, x, y)); break;
-    }
-
-    this._x0 = this._x1, this._x1 = x;
-    this._y0 = this._y1, this._y1 = y;
-    this._t0 = t1;
-  }
-};
-
-function MonotoneY(context) {
-  this._context = new ReflectContext(context);
-}
-
-(MonotoneY.prototype = Object.create(MonotoneX.prototype)).point = function(x, y) {
-  MonotoneX.prototype.point.call(this, y, x);
-};
-
-function ReflectContext(context) {
-  this._context = context;
-}
-
-ReflectContext.prototype = {
-  moveTo: function(x, y) { this._context.moveTo(y, x); },
-  closePath: function() { this._context.closePath(); },
-  lineTo: function(x, y) { this._context.lineTo(y, x); },
-  bezierCurveTo: function(x1, y1, x2, y2, x, y) { this._context.bezierCurveTo(y1, x1, y2, x2, y, x); }
-};
-
-function monotoneX(context) {
-  return new MonotoneX(context);
 }function ascending$2(a, b) {
   return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 }function bisector$1(compare) {
@@ -4865,48 +4771,51 @@ function log() {
   initRange$1.apply(scale, arguments);
 
   return scale;
-}const hasCases = (row) => {
-  return row.cases.filter((d) => d.count > 0).length > 0;
+}const hasCases = row => {
+  return row.cases.filter(d => d.count > 0).length > 0;
 };
 
-const getNDays = (data) => {
+const getNDays = data => {
   return 52;
 };
 
-const getMaxCases = (data) => {
+const getMaxCases = (data, maxDay) => {
   let max = 0;
   for (const row of data) {
-    for (const day of row.cases) {
-      if (day.count > max) {
-        max = day.count;
+    for (let i = 0; i < maxDay; i++) {
+      if (i < row.cases.length) {
+        let day = row.cases[i];
+        if (day.count > max) {
+          max = day.count;
+        }
       }
     }
   }
   return max;
 };
 
-const tidyData = (row) => {
+const tidyData = row => {
   const newRow = {};
   const dailyCases = [];
-  const keys = ['Country/Region', 'Lat', 'Long', 'Province/State'];
-  const parseDate = timeParse('%m/%d/%y');
+  const keys = ["Country/Region", "Lat", "Long", "Province/State"];
+  const parseDate = timeParse("%m/%d/%y");
   for (const [key, value] of Object.entries(row)) {
     if (keys.includes(key)) {
       newRow[key] = value;
     } else {
-      dailyCases.push({date: parseDate(key), count: parseInt(value)});
+      dailyCases.push({ date: parseDate(key), count: parseInt(value) });
     }
   }
-  newRow['cases'] = dailyCases.sort((a, b) => a.date - b.date);
-  const geoUnit = newRow['Country/Region'];
-  const subGeoUnit = newRow['Province/State'];
+  newRow["cases"] = dailyCases.sort((a, b) => a.date - b.date);
+  const geoUnit = newRow["Country/Region"];
+  const subGeoUnit = newRow["Province/State"];
   let name;
-  if (geoUnit === subGeoUnit || subGeoUnit === '') {
+  if (geoUnit === subGeoUnit || subGeoUnit === "") {
     name = geoUnit;
   } else {
     name = `${subGeoUnit}, ${geoUnit}`;
   }
-  newRow['name'] = name;
+  newRow["name"] = name;
 
   return newRow;
 };
@@ -4920,6 +4829,28 @@ const dropCasesUnder = (cases, threshold) => {
     }
   }
   return [];
+};
+
+const extraSelection = [
+  "United Kingdom",
+  "Italy",
+  "France",
+  "Spain",
+  "Germany"
+];
+
+const makeIsSelected = data => {
+  const isSelected = {};
+
+  for (const row of data) {
+    isSelected[row.name] = false;
+  }
+
+  for (const name of extraSelection) {
+    isSelected[name] = true;
+  }
+
+  return isSelected;
 };const dataUrl =
   "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv";
 
@@ -4943,8 +4874,8 @@ const main = async () => {
     .range([0, w]);
   const xAxis = axisBottom(xScale);
 
-  const yScale = log()
-    .domain([threshold, getMaxCases(data)])
+  let yScale = log()
+    .domain([threshold, getMaxCases(data, getNDays())])
     .range([h, 0]);
   const yAxis = axisLeft(yScale)
     .ticks(10)
@@ -4955,8 +4886,7 @@ const main = async () => {
 
   const line$1 = line()
     .x((d, i) => xScale(i))
-    .y(d => yScale(d))
-    .curve(monotoneX);
+    .y(d => yScale(d));
 
   // Controls
   select("#slider")
@@ -4966,8 +4896,27 @@ const main = async () => {
     .attr("max", getNDays())
     .attr("step", 1)
     .attr("value", getNDays())
-    .on("change", function() {
+    .on("input", function() {
       rescale(this.value);
+    });
+
+  const isSelected = makeIsSelected(data);
+
+  select("#filter")
+    .selectAll("option")
+    .data(Object.entries(isSelected).sort())
+    .enter()
+    .append("option")
+    .property("selected", pair => pair[1])
+    .attr("type", "text")
+    .attr("value", pair => pair[0])
+    .attr("id", pair => pair[0])
+    .text(pair => pair[0])
+    .on("mousedown", function() {
+      event.preventDefault();
+      this.selected = !this.selected;
+      isSelected[this.value] = this.selected;
+      filterRows(this.value, this.selected);
     });
 
   const svg = select("#visualisation")
@@ -5028,6 +4977,11 @@ const main = async () => {
       .enter()
       .append("g")
       .attr("class", "countryGroup")
+      .classed("filtered", d => {
+        console.log(d.name, isSelected[d.name]);
+        console.log(isSelected);
+        return !isSelected[d.name];
+      })
       .on("mouseenter", enter)
       .on("mouseleave", exit)
       .join("g");
@@ -5036,32 +4990,64 @@ const main = async () => {
   series
     .append("path")
     .attr("fill", "none")
+    .attr("class", "line")
     .attr("stroke", d => colourScale(d["Country/Region"]))
-    .attr("stroke-width", 1.5)
-    .attr("opacity", "0.2")
     .attr("d", d => line$1(d.cases.map(v => v.count)));
 
   series
     .append("text")
-    .attr("fill", "none")
-    .attr("stroke", "white")
-    .attr("stroke-width", 1)
-    .attr("opacity", "0.2")
-    .attr("font-size", "small")
+    .attr("class", "countryText")
     .attr("x", d => xScale(d.cases.length))
     .attr("y", d => yScale(d.cases[d.cases.length - 1].count))
     .attr("dy", "0.35em")
     .text(d => d.name)
     .clone(true)
-    .attr("fill", d => colourScale(d.name))
+    .attr("fill", d => colourScale(d["Country/Region"]))
     .attr("stroke", null);
 
-  function rescale(value) {
-    xScale.domain([0, value]);
+  function rescale(maxDays) {
+    xScale.domain([0, maxDays]);
+    inner.select(".xAxis").call(xAxis);
+    yScale.domain([threshold, getMaxCases(data, maxDays)]);
+    inner.select(".yAxis").call(yAxis);
+
+    series.selectAll("path").attr("d", d => line$1(d.cases.map(v => v.count)));
+
+    series
+      .selectAll("text")
+      .attr("x", d => {
+        let idx = Math.min(d.cases.length - 1, maxDays);
+        return xScale(idx);
+      })
+      .attr("y", d => {
+        let idx = Math.min(d.cases.length - 1, maxDays);
+        return yScale(d.cases[idx].count);
+      });
+  }
+
+  select(".yScaleToggle")
+    .selectAll("input")
+    .on("change", function() {
+      toggleYScale(this.value);
+    });
+
+  function toggleYScale(value) {
+    let maxDays = [...xScale.domain()][1];
+
+    if (value === "Linear") {
+      yScale = linear$1()
+        .domain([threshold, getMaxCases(data, maxDays)])
+        .range([h, 0]);
+    } else {
+      yScale = log()
+        .domain([threshold, getMaxCases(data, maxDays)])
+        .range([h, 0]);
+    }
+
     inner
-      .select(".xAxis")
+      .select(".yAxis")
       .transition()
-      .call(xAxis);
+      .call(yAxis);
 
     series
       .selectAll("path")
@@ -5070,35 +5056,42 @@ const main = async () => {
 
     series
       .selectAll("text")
+      .transition()
       .attr("x", d => {
-        let idx = Math.min(d.cases.length, value);
+        let idx = Math.min(d.cases.length - 1, maxDays);
         return xScale(idx);
       })
       .attr("y", d => {
-        let idx = Math.min(d.cases.length, value);
+        let idx = Math.min(d.cases.length - 1, maxDays);
         return yScale(d.cases[idx].count);
       });
+  }
+
+  function filterRows(key, value) {
+    console.log(key, value);
+    inner
+      .selectAll(".countryGroup")
+      .filter(d => d.name === key)
+      .classed("filtered", !value);
   }
 };
 
 function enter(d, i) {
   select(this)
     .select("path")
-    .attr("opacity", "1.0");
+    .classed("hoverHighlighted", true);
   select(this)
     .selectAll("text")
-    .attr("font-size", "large")
-    .attr("opacity", "1.0");
+    .classed("hoverHighlighted", true);
 }
 
 function exit(d, i) {
   select(this)
     .select("path")
-    .attr("opacity", "0.2");
+    .classed("hoverHighlighted", false);
   select(this)
     .selectAll("text")
-    .attr("font-size", "small")
-    .attr("opacity", "0.2");
+    .classed("hoverHighlighted", false);
 }
 
 main();

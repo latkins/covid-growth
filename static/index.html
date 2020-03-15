@@ -19,10 +19,15 @@
         justify-content: center;
       }
 
+      #wrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
       #wrapper > * {
         display: flex;
         justify-content: center;
-
       }
 
       .description {
@@ -31,34 +36,78 @@
       }
 
       .line {
+        stroke-width: 1.2;
+        opacity: 0.8;
       }
 
-      .text {
+      .countryText {
+        stroke-width: 1;
+        opacity: 0.8;
+        font-size: small;
+      }
+
+      text.hoverHighlighted {
+        opacity: 1 !important;
+        font-size: large !important;
+      }
+
+      path.hoverHighlighted {
+        opacity: 1 !important;
+        stroke-width: 1.5;
+      }
+
+      .highlighted > * {
+        opacity: 1 !important;
+        font-size: large !important;
       }
 
       .filtered {
+        display: none !important;
       }
 
-      .highlighted {
+      .select-checkbox option::before {
+        content: "\2610";
+        width: 1.3em;
+        text-align: center;
+        display: inline-block;
       }
 
+      .select-checkbox option:checked::before {
+        content: "\2611";
+      }
     </style>
   </head>
   <body>
     <div class="description">
       <p>
-        Data is aligned such that day 0 is the first day with 100 or more cases.
-        Data from
+        Data is aligned such that day 0 is the first day with 100 or more
+        confirmed cases. Data from
         <a href="https://github.com/CSSEGISandData/COVID-19"
           >https://github.com/CSSEGISandData/COVID-19</a
         >.
       </p>
     </div>
     <div id="wrapper">
-      <div id="slider"></div>
-      <div class="filter-wrapper"><label for="filter">Filter: </label><input id="filter" name="filter" type="text" value="China"></input></div>
-      <div class="highlight-wrapper"><label for="highlight">Filter: </label><input id="highlight" name="highlight" type="text" value="Kingdom"></input></div>
-      <div id="visualisation"></div>
+      <div class="row">
+        <select multiple id="filter" class="select-checkbox"
+          >Filter:
+        </select>
+      </div>
+
+      <div class="row yScaleToggle">
+        <label for="yLog">Log</label>
+        <input type="radio" id="yLog" name="yscale" value="Log" checked />
+
+        <label for="yLin">Linear</label>
+        <input type="radio" id="yLin" name="yscale" value="Linear" />
+      </div>
+
+      <div class="row">
+        <div id="visualisation"></div>
+      </div>
+      <div class="row">
+        <div id="slider"></div>
+      </div>
     </div>
     <script type="text/javascript" src="lib/index.js"></script>
   </body>

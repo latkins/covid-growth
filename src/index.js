@@ -6,7 +6,8 @@ import {
   getNDays,
   getMaxCases,
   tidyData,
-  dropCasesUnder
+  dropCasesUnder,
+  makeIsSelected
 } from "./utils";
 
 const dataUrl =
@@ -33,9 +34,9 @@ const main = async () => {
     .range([0, w]);
   const xAxis = d3.axisBottom(xScale);
 
-  const yScale = d3Scale
+  let yScale = d3Scale
     .scaleLog()
-    .domain([threshold, getMaxCases(data)])
+    .domain([threshold, getMaxCases(data, getNDays(data))])
     .range([h, 0]);
   const yAxis = d3
     .axisLeft(yScale)
@@ -49,8 +50,7 @@ const main = async () => {
   const line = d3
     .line()
     .x((d, i) => xScale(i))
-    .y(d => yScale(d))
-    .curve(d3.curveMonotoneX);
+    .y(d => yScale(d));
 
   // Controls
   d3.select("#slider")
@@ -60,8 +60,27 @@ const main = async () => {
     .attr("max", getNDays(data))
     .attr("step", 1)
     .attr("value", getNDays(data))
-    .on("change", function() {
+    .on("input", function() {
       rescale(this.value);
+    });
+
+  const isSelected = makeIsSelected(data);
+
+  d3.select("#filter")
+    .selectAll("option")
+    .data(Object.entries(isSelected).sort())
+    .enter()
+    .append("option")
+    .property("selected", pair => pair[1])
+    .attr("type", "text")
+    .attr("value", pair => pair[0])
+    .attr("id", pair => pair[0])
+    .text(pair => pair[0])
+    .on("mousedown", function() {
+      d3.event.preventDefault();
+      this.selected = !this.selected;
+      isSelected[this.value] = this.selected;
+      filterRows(this.value, this.selected);
     });
 
   const svg = d3
@@ -123,6 +142,11 @@ const main = async () => {
       .enter()
       .append("g")
       .attr("class", "countryGroup")
+      .classed("filtered", d => {
+        console.log(d.name, isSelected[d.name]);
+        console.log(isSelected);
+        return !isSelected[d.name];
+      })
       .on("mouseenter", enter)
       .on("mouseleave", exit)
       .join("g");
@@ -131,32 +155,66 @@ const main = async () => {
   series
     .append("path")
     .attr("fill", "none")
+    .attr("class", "line")
     .attr("stroke", d => colourScale(d["Country/Region"]))
-    .attr("stroke-width", 1.5)
-    .attr("opacity", "0.2")
     .attr("d", d => line(d.cases.map(v => v.count)));
 
   series
     .append("text")
-    .attr("fill", "none")
-    .attr("stroke", "white")
-    .attr("stroke-width", 1)
-    .attr("opacity", "0.2")
-    .attr("font-size", "small")
+    .attr("class", "countryText")
     .attr("x", d => xScale(d.cases.length))
     .attr("y", d => yScale(d.cases[d.cases.length - 1].count))
     .attr("dy", "0.35em")
     .text(d => d.name)
     .clone(true)
-    .attr("fill", d => colourScale(d.name))
+    .attr("fill", d => colourScale(d["Country/Region"]))
     .attr("stroke", null);
 
-  function rescale(value) {
-    xScale.domain([0, value]);
+  function rescale(maxDays) {
+    xScale.domain([0, maxDays]);
+    inner.select(".xAxis").call(xAxis);
+    yScale.domain([threshold, getMaxCases(data, maxDays)]);
+    inner.select(".yAxis").call(yAxis);
+
+    series.selectAll("path").attr("d", d => line(d.cases.map(v => v.count)));
+
+    series
+      .selectAll("text")
+      .attr("x", d => {
+        let idx = Math.min(d.cases.length - 1, maxDays);
+        return xScale(idx);
+      })
+      .attr("y", d => {
+        let idx = Math.min(d.cases.length - 1, maxDays);
+        return yScale(d.cases[idx].count);
+      });
+  }
+
+  d3.select(".yScaleToggle")
+    .selectAll("input")
+    .on("change", function() {
+      toggleYScale(this.value);
+    });
+
+  function toggleYScale(value) {
+    let maxDays = [...xScale.domain()][1];
+
+    if (value === "Linear") {
+      yScale = d3Scale
+        .scaleLinear()
+        .domain([threshold, getMaxCases(data, maxDays)])
+        .range([h, 0]);
+    } else {
+      yScale = d3Scale
+        .scaleLog()
+        .domain([threshold, getMaxCases(data, maxDays)])
+        .range([h, 0]);
+    }
+
     inner
-      .select(".xAxis")
+      .select(".yAxis")
       .transition()
-      .call(xAxis);
+      .call(yAxis);
 
     series
       .selectAll("path")
@@ -165,35 +223,62 @@ const main = async () => {
 
     series
       .selectAll("text")
+      .transition()
       .attr("x", d => {
-        let idx = Math.min(d.cases.length, value);
+        let idx = Math.min(d.cases.length - 1, maxDays);
         return xScale(idx);
       })
       .attr("y", d => {
-        let idx = Math.min(d.cases.length, value);
+        let idx = Math.min(d.cases.length - 1, maxDays);
         return yScale(d.cases[idx].count);
       });
+  }
+
+  function filterRows(key, value) {
+    console.log(key, value);
+    inner
+      .selectAll(".countryGroup")
+      .filter(d => d.name === key)
+      .classed("filtered", !value);
+  }
+
+  function highlightRows(value) {
+    let terms = value
+      .split(" ")
+      .map(s => s.toLowerCase())
+      .filter(s => s.length > 0);
+
+    inner
+      .selectAll("g.countryGroup")
+      .filter(function(d) {
+        for (term of terms) {
+          if (d.name.toLowerCase().includes(term)) {
+            return true;
+          }
+        }
+        return false;
+      })
+      .classed("filtered", false)
+      .classed("highlighted", true);
   }
 };
 
 function enter(d, i) {
   d3.select(this)
     .select("path")
-    .attr("opacity", "1.0");
+    .classed("hoverHighlighted", true);
   d3.select(this)
     .selectAll("text")
-    .attr("font-size", "large")
-    .attr("opacity", "1.0");
+    .classed("hoverHighlighted", true);
 }
 
 function exit(d, i) {
   d3.select(this)
     .select("path")
-    .attr("opacity", "0.2");
+    .classed("hoverHighlighted", false);
   d3.select(this)
     .selectAll("text")
-    .attr("font-size", "small")
-    .attr("opacity", "0.2");
+    .classed("hoverHighlighted", false);
 }
 
 main();
