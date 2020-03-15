@@ -1,0 +1,70 @@
+footer {
+  display: flex;
+  justify-content: center;
+}
+#visualisation {
+  display: flex;
+  justify-content: center;
+}
+#slider {
+  display: flex;
+  justify-content: center;
+}
+
+#wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#wrapper > * {
+  display: flex;
+  justify-content: center;
+}
+
+.description {
+  display: flex;
+  justify-content: center;
+}
+
+.line {
+  stroke-width: 1.2;
+  opacity: 0.8;
+}
+
+.countryText {
+  stroke-width: 1;
+  opacity: 0.8;
+  font-size: small;
+}
+
+text.hoverHighlighted {
+  opacity: 1 !important;
+  font-size: large !important;
+}
+
+path.hoverHighlighted {
+  opacity: 1 !important;
+  stroke-width: 1.5;
+}
+
+.highlighted > * {
+  opacity: 1 !important;
+  font-size: large !important;
+}
+
+.filtered {
+  display: none !important;
+}
+
+.select-checkbox option::before {
+  content: "\2610";
+  width: 1.3em;
+  text-align: center;
+  display: inline-block;
+}
+
+.select-checkbox option:checked::before {
+  content: "\2611";
+}
+

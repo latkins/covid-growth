@@ -20,6 +20,7 @@
     "start": "yarn build:watch:server"
   },
   "dependencies": {
+    "css-lint": "^1.0.1",
     "d3": "^5.15.0",
     "d3-fetch": "^1.1.2",
     "d3-scale": "^3.2.1"
