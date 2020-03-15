@@ -4942,6 +4942,9 @@ const main = async () => {
       .enter()
       .append("g")
       .attr("class", "countryGroup")
+      .classed("filtered", d => {
+        return !isSelected[d.name];
+      })
       .on("touchstart", enter)
       .on("touchend", exit)
       .join("g");
