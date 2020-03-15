@@ -1,4 +1,5 @@
 import resolve from "rollup-plugin-node-resolve";
+import { terser } from "rollup-plugin-terser";
 
 export default {
   input: "src/index.js",
@@ -7,7 +8,7 @@ export default {
     file: "static/lib/index.js",
     format: "esm"
   },
-  plugins: [resolve()],
+  plugins: [resolve(), terser()],
   onwarn: function(warning, warn) {
     if (warning.code === "CIRCULAR_DEPENDENCY") return;
     warn(warning);

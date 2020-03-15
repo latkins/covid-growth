@@ -29,6 +29,17 @@ const getMaxCases = (data, maxDay) => {
   return max;
 };
 
+const getName = item => {
+  const geoUnit = item["Country/Region"];
+  const subGeoUnit = item["Province/State"];
+  if (geoUnit === subGeoUnit || subGeoUnit === "") {
+    name = geoUnit;
+  } else {
+    name = `${subGeoUnit}, ${geoUnit}`;
+  }
+  return name;
+};
+
 const tidyData = row => {
   const newRow = {};
   const dailyCases = [];
@@ -42,15 +53,7 @@ const tidyData = row => {
     }
   }
   newRow["cases"] = dailyCases.sort((a, b) => a.date - b.date);
-  const geoUnit = newRow["Country/Region"];
-  const subGeoUnit = newRow["Province/State"];
-  let name;
-  if (geoUnit === subGeoUnit || subGeoUnit === "") {
-    name = geoUnit;
-  } else {
-    name = `${subGeoUnit}, ${geoUnit}`;
-  }
-  newRow["name"] = name;
+  newRow["name"] = getName(newRow);
 
   return newRow;
 };
@@ -80,11 +83,23 @@ const makeIsSelected = (data, urlSelected) => {
   return isSelected;
 };
 
+const processLockdown = data => {
+  const nameToDates = {};
+  data = data.filter(d => d["Date of action"] !== "");
+  for (const item of data) {
+    let name = getName(item);
+    nameToDates[name] = item["Date of action"];
+  }
+
+  return nameToDates;
+};
+
 export {
   hasCases,
   getNDays,
   getMaxCases,
   tidyData,
   dropCasesUnder,
-  makeIsSelected
+  makeIsSelected,
+  processLockdown
 };

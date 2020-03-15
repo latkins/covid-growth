@@ -7,7 +7,8 @@ import {
   getMaxCases,
   tidyData,
   dropCasesUnder,
-  makeIsSelected
+  makeIsSelected,
+  processLockdown
 } from "./utils";
 
 const dataUrl =
@@ -22,12 +23,15 @@ const main = async () => {
   data.forEach(d => (d.cases = dropCasesUnder(d.cases, threshold)));
   data = data.filter(hasCases);
 
+  let lockDown = await d3.csv("./lockdown-dates-03-14-2020.csv");
+  lockDown = processLockdown(lockDown);
+
+  // Need to add lockdown to data.
+
   // Set up sizes
   const margin = { top: 50, right: 5, bottom: 60, left: 60 };
   const w = Math.min(window.innerWidth, 800) - margin.left - margin.right;
   const h = Math.min(window.innerHeight, 800) - margin.top - margin.bottom;
-
-  console.log(h);
 
   // Set up axes
   const xScale = d3Scale
@@ -37,7 +41,7 @@ const main = async () => {
   const xAxis = d3.axisBottom(xScale);
 
   let yScale = d3Scale
-    .scaleLog()
+    .scaleLinear()
     .domain([threshold, getMaxCases(data, getNDays(data))])
     .range([h, 0]);
   let yAxis = d3
@@ -189,6 +193,12 @@ const main = async () => {
     .clone(true)
     .attr("fill", d => colourScale(d["Country/Region"]))
     .attr("stroke", null);
+
+  //series
+  //.append("line")
+  //.attr("fill", "none")
+  //.attr("stroke", d => colourScale(d["Country/Region"]))
+  //.attr("class", "actionDate");
 
   function rescale(maxDays) {
     xScale.domain([0, maxDays]);

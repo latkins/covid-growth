@@ -45,7 +45,7 @@ text.hoverHighlighted {
 
 path.hoverHighlighted {
   opacity: 1 !important;
-  stroke-width: 1.5;
+  stroke-width: 5;
 }
 
 .highlighted > * {
