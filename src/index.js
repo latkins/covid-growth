@@ -23,15 +23,17 @@ const main = async () => {
   data = data.filter(hasCases);
 
   // Set up sizes
-  const margin = { top: 20, right: 50, bottom: 100, left: 80 };
+  const margin = { top: 50, right: 5, bottom: 60, left: 60 };
   const w = Math.min(window.innerWidth, 800) - margin.left - margin.right;
   const h = Math.min(window.innerHeight, 800) - margin.top - margin.bottom;
+
+  console.log(h);
 
   // Set up axes
   const xScale = d3Scale
     .scaleLinear()
-    .domain([0, getNDays(data)])
-    .range([0, w]);
+    .domain([0, getNDays(data) + 8])
+    .range([0, w + margin.right]);
   const xAxis = d3.axisBottom(xScale);
 
   let yScale = d3Scale
@@ -49,7 +51,9 @@ const main = async () => {
 
   const line = d3
     .line()
-    .x((d, i) => xScale(i))
+    .x((d, i) => {
+      return xScale(i);
+    })
     .y(d => yScale(d));
 
   // Controls
@@ -57,9 +61,9 @@ const main = async () => {
     .append("input")
     .attr("type", "range")
     .attr("min", 7)
-    .attr("max", getNDays(data))
+    .attr("max", getNDays(data) + 8)
     .attr("step", 1)
-    .attr("value", getNDays(data))
+    .attr("value", getNDays(data) + 8)
     .on("input", function() {
       rescale(this.value);
     });
