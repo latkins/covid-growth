@@ -5,7 +5,13 @@ const hasCases = row => {
 };
 
 const getNDays = data => {
-  return 52;
+  let max = 0;
+  for (const row of data) {
+    if (row.cases.length > max) {
+      max = row.cases.length;
+    }
+  }
+  return max;
 };
 
 const getMaxCases = (data, maxDay) => {
@@ -60,23 +66,15 @@ const dropCasesUnder = (cases, threshold) => {
   return [];
 };
 
-const extraSelection = [
-  "United Kingdom",
-  "Italy",
-  "France",
-  "Spain",
-  "Germany"
-];
-
-const makeIsSelected = data => {
+const makeIsSelected = (data, urlSelected) => {
   const isSelected = {};
 
   for (const row of data) {
     isSelected[row.name] = false;
   }
 
-  for (const name of extraSelection) {
-    isSelected[name] = true;
+  for (const key of urlSelected.keys()) {
+    isSelected[key] = true;
   }
 
   return isSelected;

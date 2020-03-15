@@ -933,8 +933,6 @@ function selection_clone(deep) {
       : this.node().__data__;
 }var filterEvents = {};
 
-var event = null;
-
 if (typeof document !== "undefined") {
   var element = document.documentElement;
   if (!("onmouseenter" in element)) {
@@ -954,12 +952,9 @@ function filterContextListener(listener, index, group) {
 
 function contextListener(listener, index, group) {
   return function(event1) {
-    var event0 = event; // Events can be reentrant (e.g., focus).
-    event = event1;
     try {
       listener.call(this, this.__data__, index, group);
     } finally {
-      event = event0;
     }
   };
 }
@@ -4744,7 +4739,13 @@ function log() {
 };
 
 const getNDays = data => {
-  return 52;
+  let max = 0;
+  for (const row of data) {
+    if (row.cases.length > max) {
+      max = row.cases.length;
+    }
+  }
+  return max;
 };
 
 const getMaxCases = (data, maxDay) => {
@@ -4799,23 +4800,15 @@ const dropCasesUnder = (cases, threshold) => {
   return [];
 };
 
-const extraSelection = [
-  "United Kingdom",
-  "Italy",
-  "France",
-  "Spain",
-  "Germany"
-];
-
-const makeIsSelected = data => {
+const makeIsSelected = (data, urlSelected) => {
   const isSelected = {};
 
   for (const row of data) {
     isSelected[row.name] = false;
   }
 
-  for (const name of extraSelection) {
-    isSelected[name] = true;
+  for (const key of urlSelected.keys()) {
+    isSelected[key] = true;
   }
 
   return isSelected;
@@ -4838,14 +4831,14 @@ const main = async () => {
 
   // Set up axes
   const xScale = linear$1()
-    .domain([0, getNDays()])
+    .domain([0, getNDays(data)])
     .range([0, w]);
   const xAxis = axisBottom(xScale);
 
   let yScale = log()
-    .domain([threshold, getMaxCases(data, getNDays())])
+    .domain([threshold, getMaxCases(data, getNDays(data))])
     .range([h, 0]);
-  const yAxis = axisLeft(yScale)
+  let yAxis = axisLeft(yScale)
     .ticks(10)
     .tickFormat(format(","));
 
@@ -4861,31 +4854,46 @@ const main = async () => {
     .append("input")
     .attr("type", "range")
     .attr("min", 7)
-    .attr("max", getNDays())
+    .attr("max", getNDays(data))
     .attr("step", 1)
-    .attr("value", getNDays())
+    .attr("value", getNDays(data))
     .on("input", function() {
       rescale(this.value);
     });
 
-  const isSelected = makeIsSelected(data);
+  const isSelected = makeIsSelected(
+    data,
+    new URLSearchParams(window.location.search)
+  );
+  let filterData = Object.entries(isSelected).sort((a, b) => {
+    if (a[0] > b[0]) {
+      return 1;
+    } else {
+      return -1;
+    }
+  });
 
-  select("#filter")
-    .selectAll("option")
-    .data(Object.entries(isSelected).sort())
-    .enter()
-    .append("option")
-    .property("selected", pair => pair[1])
-    .attr("type", "text")
-    .attr("value", pair => pair[0])
-    .attr("id", pair => pair[0])
-    .text(pair => pair[0])
-    .on("mousedown", function() {
-      event.preventDefault();
-      this.selected = !this.selected;
-      isSelected[this.value] = this.selected;
-      filterRows(this.value, this.selected);
+  filterData = await filterData.map(pair => {
+    let [id, value] = pair;
+    return { id: id, text: id, selected: value };
+  });
+
+  $(document).ready(function() {
+    $(".js-example-basic-multiple").select2({
+      placehold: "Choose a region",
+      data: filterData,
+      closeOnSelect: false
     });
+  });
+
+  $(".js-example-basic-multiple").on("select2:unselect", function(e) {
+    let row = e.params.data;
+    filterRows(row.text, row.selected);
+  });
+  $(".js-example-basic-multiple").on("select2:select", function(e) {
+    let row = e.params.data;
+    filterRows(row.text, row.selected);
+  });
 
   const svg = select("#visualisation")
     .append("svg:svg")
@@ -4946,8 +4954,6 @@ const main = async () => {
       .append("g")
       .attr("class", "countryGroup")
       .classed("filtered", d => {
-        console.log(d.name, isSelected[d.name]);
-        console.log(isSelected);
         return !isSelected[d.name];
       })
       .on("mouseenter", enter)
@@ -5006,10 +5012,16 @@ const main = async () => {
       yScale = linear$1()
         .domain([threshold, getMaxCases(data, maxDays)])
         .range([h, 0]);
+      yAxis = axisLeft(yScale)
+        .ticks(10)
+        .tickFormat(format(","));
     } else {
       yScale = log()
         .domain([threshold, getMaxCases(data, maxDays)])
         .range([h, 0]);
+      yAxis = axisLeft(yScale)
+        .ticks(10)
+        .tickFormat(format(","));
     }
 
     inner
@@ -5036,7 +5048,15 @@ const main = async () => {
   }
 
   function filterRows(key, value) {
-    console.log(key, value);
+    let params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set(key, true);
+      console.log(params);
+    } else {
+      params.delete(key);
+    }
+
+    window.history.replaceState({}, "", `${location.pathname}?${params}`);
     inner
       .selectAll(".countryGroup")
       .filter(d => d.name === key)

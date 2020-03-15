@@ -38,7 +38,7 @@ const main = async () => {
     .scaleLog()
     .domain([threshold, getMaxCases(data, getNDays(data))])
     .range([h, 0]);
-  const yAxis = d3
+  let yAxis = d3
     .axisLeft(yScale)
     .ticks(10)
     .tickFormat(d3.format(","));
@@ -64,24 +64,39 @@ const main = async () => {
       rescale(this.value);
     });
 
-  const isSelected = makeIsSelected(data);
+  const isSelected = makeIsSelected(
+    data,
+    new URLSearchParams(window.location.search)
+  );
+  let filterData = Object.entries(isSelected).sort((a, b) => {
+    if (a[0] > b[0]) {
+      return 1;
+    } else {
+      return -1;
+    }
+  });
 
-  d3.select("#filter")
-    .selectAll("option")
-    .data(Object.entries(isSelected).sort())
-    .enter()
-    .append("option")
-    .property("selected", pair => pair[1])
-    .attr("type", "text")
-    .attr("value", pair => pair[0])
-    .attr("id", pair => pair[0])
-    .text(pair => pair[0])
-    .on("mousedown", function() {
-      d3.event.preventDefault();
-      this.selected = !this.selected;
-      isSelected[this.value] = this.selected;
-      filterRows(this.value, this.selected);
+  filterData = await filterData.map(pair => {
+    let [id, value] = pair;
+    return { id: id, text: id, selected: value };
+  });
+
+  $(document).ready(function() {
+    $(".js-example-basic-multiple").select2({
+      placehold: "Choose a region",
+      data: filterData,
+      closeOnSelect: false
     });
+  });
+
+  $(".js-example-basic-multiple").on("select2:unselect", function(e) {
+    let row = e.params.data;
+    filterRows(row.text, row.selected);
+  });
+  $(".js-example-basic-multiple").on("select2:select", function(e) {
+    let row = e.params.data;
+    filterRows(row.text, row.selected);
+  });
 
   const svg = d3
     .select("#visualisation")
@@ -143,8 +158,6 @@ const main = async () => {
       .append("g")
       .attr("class", "countryGroup")
       .classed("filtered", d => {
-        console.log(d.name, isSelected[d.name]);
-        console.log(isSelected);
         return !isSelected[d.name];
       })
       .on("mouseenter", enter)
@@ -204,11 +217,19 @@ const main = async () => {
         .scaleLinear()
         .domain([threshold, getMaxCases(data, maxDays)])
         .range([h, 0]);
+      yAxis = d3
+        .axisLeft(yScale)
+        .ticks(10)
+        .tickFormat(d3.format(","));
     } else {
       yScale = d3Scale
         .scaleLog()
         .domain([threshold, getMaxCases(data, maxDays)])
         .range([h, 0]);
+      yAxis = d3
+        .axisLeft(yScale)
+        .ticks(10)
+        .tickFormat(d3.format(","));
     }
 
     inner
@@ -235,7 +256,15 @@ const main = async () => {
   }
 
   function filterRows(key, value) {
-    console.log(key, value);
+    let params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set(key, true);
+      console.log(params);
+    } else {
+      params.delete(key);
+    }
+
+    window.history.replaceState({}, "", `${location.pathname}?${params}`);
     inner
       .selectAll(".countryGroup")
       .filter(d => d.name === key)
