@@ -9,48 +9,74 @@
       href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css?family=Quicksand&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <title>Covid-19</title>
   </head>
+
   <body>
-    <div class="description">
-      <p>
-        Data is aligned such that day 0 is the first day with 100 or more
-        confirmed cases. Data from
-        <a href="https://github.com/CSSEGISandData/COVID-19"
-          >https://github.com/CSSEGISandData/COVID-19</a
-        >.
-      </p>
-    </div>
-    <div id="wrapper">
-      <div class="row">
-        <select
-          multiple="multiple"
-          id="filter"
-          class="js-example-basic-multiple"
-          >Filter:
-        </select>
+    <header class="section">
+      <h1>COVID-19 CONFIRMED CASES CHART</h1>
+    </header>
+
+    <main>
+      <hr />
+      <div class="section description">
+        <p>
+          Data is aligned such that day 0 is the first day with 100 or more
+          confirmed cases in each country/region. <br /><br />
+        </p>
+        <small>
+          Data from
+          <a href="https://github.com/CSSEGISandData/COVID-19"
+            >https://github.com/CSSEGISandData/COVID-19</a
+          >.
+        </small>
+      </div>
+      <hr />
+
+      <div id="wrapper">
+        <div class="section countries flex">
+          <label class="label" id="filter">Select countries:</label>
+          <select
+            multiple="multiple"
+            id="filter"
+            class="js-example-basic-multiple"
+          >
+          </select>
+        </div>
+
+        <div>
+          <div id="visualisation"></div>
+        </div>
+
+        <div id="axis_toggle" class="section flex">
+          <div class="yScaleToggle flex">
+            <p class="label">Change y-axis:</p>
+            <label for="yLog">Log</label>
+            <input type="radio" id="yLog" name="yscale" value="Log" checked />
+
+            <label for="yLin">Linear</label>
+            <input type="radio" id="yLin" name="yscale" value="Linear" />
+          </div>
+
+          <div class="xScaleToggle flex">
+            <p class="label">Change x-axis:</p>
+            <div id="slider"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="row yScaleToggle">
-        <label for="yLog">Log</label>
-        <input type="radio" id="yLog" name="yscale" value="Log" checked />
+      <hr />
+      <script type="text/javascript" src="lib/index.js"></script>
+    </main>
 
-        <label for="yLin">Linear</label>
-        <input type="radio" id="yLin" name="yscale" value="Linear" />
-      </div>
-
-      <div class="row">
-        <div id="visualisation"></div>
-      </div>
-      <div class="row">
-        <div id="slider"></div>
-      </div>
-    </div>
-    <script type="text/javascript" src="lib/index.js"></script>
+    <footer class="section">
+      Get in touch&nbsp<a href="https://twitter.com/latkins_">@latkins_</a>
+    </footer>
   </body>
-  <footer>
-    Get in touch&nbsp<a href="https://twitter.com/latkins_">@latkins_</a>
-  </footer>
 </html>

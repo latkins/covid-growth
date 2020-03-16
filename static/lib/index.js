@@ -4262,11 +4262,7 @@ function defaultLocale$1(definition) {
   utcFormat = locale$1.utcFormat;
   utcParse = locale$1.utcParse;
   return locale$1;
-}function colors(specifier) {
-  var n = specifier.length / 6 | 0, colors = new Array(n), i = 0;
-  while (i < n) colors[i] = "#" + specifier.slice(i * 6, ++i * 6);
-  return colors;
-}var category10 = colors("1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf");function constant$2(x) {
+}function constant$2(x) {
   return function constant() {
     return x;
   };
@@ -4842,7 +4838,19 @@ const main = async () => {
     .ticks(10)
     .tickFormat(format(","));
 
-  const colourScale = ordinal(category10)
+  const colourScale = ordinal([
+      "#ffffff",
+      "#ffc604",
+      "#ff8b00",
+      "#fa8775",
+      "#ff0011",
+      "#e700af",
+      "#e991cd",
+      "#a80fff",
+      "#0058fc",
+      "#4fb136",
+      "#bee300"
+    ])
     .domain(data.map(d => d["Country/Region"]));
 
   const line$1 = line()
@@ -4916,6 +4924,7 @@ const main = async () => {
       "translate(" + w / 2 + " ," + (h + margin.bottom * 0.6) + ")"
     )
     .style("text-anchor", "middle")
+    .attr("class", "axisLabel")
     .text("Days since >=100 cases.");
 
   const gY = inner
@@ -4930,6 +4939,7 @@ const main = async () => {
     .attr("x", 0 - h / 2)
     .attr("dy", "1em")
     .style("text-anchor", "middle")
+    .attr("class", "axisLabel")
     .text("Cases");
 
   let series;
