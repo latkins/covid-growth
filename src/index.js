@@ -163,6 +163,7 @@ const main = async () => {
   } else {
     series = inner
       .append("g")
+      .attr("class", "graphInner")
       .selectAll("g")
       .data(data)
       .enter()
@@ -220,10 +221,42 @@ const main = async () => {
       });
   }
 
+  function getScales(data, yLinear) {
+    let maxDays = getMaxCases(data);
+
+    if (yLinear) {
+      let yScale = d3Scale
+        .scaleLinear()
+        .domain([threshold, maxDays])
+        .range([h, 0]);
+      let yAxis = d3
+        .axisLeft(yScale)
+        .ticks(10)
+        .tickFormat(d3.format(","));
+    } else {
+      let yScale = d3Scale
+        .scaleLog()
+        .domain([threshold, maxDays])
+        .range([h, 0]);
+      let yAxis = d3
+        .axisLeft(yScale)
+        .ticks(10)
+        .tickFormat(d3.format(","));
+    }
+    const xScale = d3Scale
+      .scaleLinear()
+      .domain([0, getNDays(data) + 8])
+      .range([0, w + margin.right]);
+    const xAxis = d3.axisBottom(xScale);
+
+    return [xScale, xAxis, yScale, yAxis];
+  }
+
   d3.select(".yScaleToggle")
     .selectAll("input")
     .on("change", function() {
-      toggleYScale(this.value);
+      //toggleYScale(this.value);
+      update(inner, data, this.value === "Linear");
     });
 
   function toggleYScale(value) {
@@ -272,11 +305,39 @@ const main = async () => {
       });
   }
 
+  function update(root, data, yLinear) {
+    [xScale, xAxis, yScale, yAxis] = getScales(data, yLinear);
+
+    console.log(root);
+
+    root
+      .select(".yAxis")
+      .transition()
+      .call(yAxis);
+
+    // Update searchbar with data here
+
+    let groups = root.selectAll("countryGroup").data(data);
+
+    // Remove unused
+    groups.exit().remove();
+
+    let paths = groups
+      .enter()
+      .select("path")
+      .attr("d", d => line(d.cases.map(v => v.count)));
+
+    let texts = groups
+      .enter()
+      .selectAll("text")
+      .attr("x", d => xScale(d.cases.length))
+      .attr("y", d => yScale(d.cases[d.cases.length - 1].count));
+  }
+
   function filterRows(key, value) {
     let params = new URLSearchParams(window.location.search);
     if (value) {
       params.set(key, true);
-      console.log(params);
     } else {
       params.delete(key);
     }
@@ -286,26 +347,6 @@ const main = async () => {
       .selectAll(".countryGroup")
       .filter(d => d.name === key)
       .classed("filtered", !value);
-  }
-
-  function highlightRows(value) {
-    let terms = value
-      .split(" ")
-      .map(s => s.toLowerCase())
-      .filter(s => s.length > 0);
-
-    inner
-      .selectAll("g.countryGroup")
-      .filter(function(d) {
-        for (term of terms) {
-          if (d.name.toLowerCase().includes(term)) {
-            return true;
-          }
-        }
-        return false;
-      })
-      .classed("filtered", false)
-      .classed("highlighted", true);
   }
 };
 
