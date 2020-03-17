@@ -54,7 +54,7 @@ const main = async () => {
   // Set up sizes
   const margin = { top: 50, right: 5, bottom: 60, left: 65 };
   const w =
-    0.95 * (Math.min(window.innerWidth, 800) - margin.left - margin.right);
+    0.9 * (Math.min(window.innerWidth, 800) - margin.left - margin.right);
   const h = Math.min(window.innerHeight, 800) - margin.top - margin.bottom;
 
   d3.select(".yScaleToggle")
@@ -391,8 +391,8 @@ const main = async () => {
       .select(".countryText")
       .attr("x", d => {
         let lastPos = xScale(d.series.length - 1);
-        if (w - lastPos < 100) {
-          return w - 100;
+        if (w - lastPos < 133) {
+          return w - 133;
         }
         return lastPos;
       })
