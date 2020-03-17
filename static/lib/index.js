@@ -4296,15 +4296,15 @@ Linear.prototype = {
 
 function curveLinear(context) {
   return new Linear(context);
-}function x(p) {
+}function x$1(p) {
   return p[0];
 }
 
-function y(p) {
+function y$1(p) {
   return p[1];
 }function line() {
-  var x$1 = x,
-      y$1 = y,
+  var x = x$1,
+      y = y$1,
       defined = constant$2(true),
       context = null,
       curve = curveLinear,
@@ -4324,18 +4324,18 @@ function y(p) {
         if (defined0 = !defined0) output.lineStart();
         else output.lineEnd();
       }
-      if (defined0) output.point(+x$1(d, i, data), +y$1(d, i, data));
+      if (defined0) output.point(+x(d, i, data), +y(d, i, data));
     }
 
     if (buffer) return output = null, buffer + "" || null;
   }
 
   line.x = function(_) {
-    return arguments.length ? (x$1 = typeof _ === "function" ? _ : constant$2(+_), line) : x$1;
+    return arguments.length ? (x = typeof _ === "function" ? _ : constant$2(+_), line) : x;
   };
 
   line.y = function(_) {
-    return arguments.length ? (y$1 = typeof _ === "function" ? _ : constant$2(+_), line) : y$1;
+    return arguments.length ? (y = typeof _ === "function" ? _ : constant$2(+_), line) : y;
   };
 
   line.defined = function(_) {
@@ -5233,29 +5233,52 @@ const main = async () => {
       .attr("stroke", d => colourScale(d["Country/Region"]));
 
     // Intervention text
-    //subGroups
-    //.filter(d => {
-    //return d.series.filter(s => s.event !== null).length > 0;
-    //})
-    //.transition()
-    //.select(".interventionText")
-    //.attr("transform", "rotate(-90)")
-    //.attr("y", yScale(yScale.domain()[1] / 2))
-    //.attr("x", d => {
-    //let found = false;
-    //let idx = null;
-    //for (let i = 0; i < d.series.length; i++) {
-    //day = d.series[i];
-    //if (day.event !== null) {
-    //idx = i;
-    //found = true;
-    //break;
-    //}
-    //}
-    //if (found) {
-    //return xScale(idx);
-    //}
-    //});
+    subGroups
+      .filter(d => {
+        return d.series.filter(s => s.event !== null).length > 0;
+      })
+      .transition()
+      .select(".interventionText")
+      .attr("x", d => {
+        let found = false;
+        let idx = null;
+        for (let i = 0; i < d.series.length; i++) {
+          day = d.series[i];
+          if (day.event !== null) {
+            idx = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          return xScale(idx);
+        }
+      })
+      .attr("y", d => {
+        return yScale(yScale.domain()[1] / 2);
+      })
+      .attr("transform", d => {
+        let found = false;
+        let idx = null;
+        for (let i = 0; i < d.series.length; i++) {
+          day = d.series[i];
+          if (day.event !== null) {
+            idx = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          x = xScale(idx);
+        }
+
+        y = yScale(yScale.domain()[1] / 2);
+        return `rotate(-90, ${x}, ${y})`;
+      })
+      .attr("fill", d => colourScale(d["Country/Region"]))
+      .attr("dy", "+1.1em")
+      .attr("text-anchor", "middle")
+      .text(d => `${d.name} (Lock Down)`);
 
     //Country text
     subGroups

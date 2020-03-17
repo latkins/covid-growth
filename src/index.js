@@ -339,29 +339,52 @@ const main = async () => {
       .attr("stroke", d => colourScale(d["Country/Region"]));
 
     // Intervention text
-    //subGroups
-    //.filter(d => {
-    //return d.series.filter(s => s.event !== null).length > 0;
-    //})
-    //.transition()
-    //.select(".interventionText")
-    //.attr("transform", "rotate(-90)")
-    //.attr("y", yScale(yScale.domain()[1] / 2))
-    //.attr("x", d => {
-    //let found = false;
-    //let idx = null;
-    //for (let i = 0; i < d.series.length; i++) {
-    //day = d.series[i];
-    //if (day.event !== null) {
-    //idx = i;
-    //found = true;
-    //break;
-    //}
-    //}
-    //if (found) {
-    //return xScale(idx);
-    //}
-    //});
+    subGroups
+      .filter(d => {
+        return d.series.filter(s => s.event !== null).length > 0;
+      })
+      .transition()
+      .select(".interventionText")
+      .attr("x", d => {
+        let found = false;
+        let idx = null;
+        for (let i = 0; i < d.series.length; i++) {
+          day = d.series[i];
+          if (day.event !== null) {
+            idx = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          return xScale(idx);
+        }
+      })
+      .attr("y", d => {
+        return yScale(yScale.domain()[1] / 2);
+      })
+      .attr("transform", d => {
+        let found = false;
+        let idx = null;
+        for (let i = 0; i < d.series.length; i++) {
+          day = d.series[i];
+          if (day.event !== null) {
+            idx = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          x = xScale(idx);
+        }
+
+        y = yScale(yScale.domain()[1] / 2);
+        return `rotate(-90, ${x}, ${y})`;
+      })
+      .attr("fill", d => colourScale(d["Country/Region"]))
+      .attr("dy", "+1.1em")
+      .attr("text-anchor", "middle")
+      .text(d => `${d.name} (Lock Down)`);
 
     //Country text
     subGroups
