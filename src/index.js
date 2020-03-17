@@ -90,7 +90,19 @@ const main = async () => {
     .tickFormat(d3.format(","));
 
   const colourScale = d3
-    .scaleOrdinal(d3.schemeCategory10)
+    .scaleOrdinal([
+      "#ffffff",
+      "#ffc604",
+      "#ff8b00",
+      "#fa8775",
+      "#ff0011",
+      "#e700af",
+      "#e991cd",
+      "#a80fff",
+      "#0058fc",
+      "#4fb136",
+      "#bee300"
+    ])
     .domain(data.map(d => d["Country/Region"]));
 
   const line = d3
@@ -166,6 +178,7 @@ const main = async () => {
       "translate(" + w / 2 + " ," + (h + margin.bottom * 0.6) + ")"
     )
     .style("text-anchor", "middle")
+    .attr("class", "axisLabel")
     .text("Days since >=100 cases.");
 
   const gY = inner
@@ -181,6 +194,7 @@ const main = async () => {
     .attr("x", 0 - h / 2)
     .attr("dy", "1em")
     .style("text-anchor", "middle")
+    .attr("class", "axisLabel")
     .text("Cases");
 
   const graphInner = inner

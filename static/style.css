@@ -1,41 +1,112 @@
-footer {
-  display: flex;
-  justify-content: center;
-}
-#visualisation {
-  display: flex;
-  justify-content: center;
-}
-#slider {
-  display: flex;
-  justify-content: center;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-collapse: collapse;
 }
 
-#wrapper {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+html,
+body {
+  width: 100%;
 }
 
-#wrapper > * {
-  display: flex;
-  justify-content: center;
+body {
+  background: #191b23;
+  color: #e7e7e8;
+  font-family: "Quicksand", sans-serif;
+  text-align: center;
+  margin: 0 5%;
 }
 
-.description {
+a {
+  color: #e5eaef;
+}
+
+small {
+  line-height: 70px;
+}
+
+hr {
+  border: 0;
+  height: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.flex {
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
+}
+
+.section {
+  padding: 5%;
+}
+
+.label {
+  font-weight: bold;
+  padding: 0 10px;
+}
+
+#filter {
+  width: 100%;
+}
+
+label#filter {
+  width: 18%;
+}
+
+ul {
+  color: #323139;
+}
+
+.select2-container--default .select2-selection--multiple {
+  background-color: #2d303a;
+}
+
+.select2-container--default .select2-results__option[aria-selected="true"] {
+  background-color: #a3aac2;
+}
+
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice {
+  background-color: #a3aac2;
+}
+
+#axis_toggle {
+  flex-wrap: wrap;
+}
+
+.yScaleToggle,
+.xScaleToggle {
+  margin: 0 20px;
+  align-items: center;
+}
+
+.yScaleToggle > *,
+.xScaleToggle > * {
+  padding: 0 7px;
+}
+
+.yScaleToggle > input,
+.xScaleToggle > p {
+  margin-right: 10px;
+}
+
+/* Chart */
+
+.axisLabel {
+  fill: #e5eaef;
 }
 
 .countryLine {
   stroke-width: 1.2;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .countryText {
-  stroke-width: 1;
-  opacity: 0.8;
-  font-size: small;
+  stroke-width: 1.5;
+  opacity: 0.9;
 }
 
 .intervention {
@@ -65,6 +136,26 @@ path.hoverHighlighted {
   display: none !important;
 }
 
-#filter {
-  width: 100%;
+footer {
+  padding: 20px;
+}
+
+@media screen and (max-width: 650px) {
+  p {
+    font-size: larger;
+  }
+
+  small {
+    line-height: normal;
+  }
+
+  label#filter {
+    width: 27%;
+    padding-left: 0;
+  }
+
+  .axisLabel {
+    fill: #e5eaef;
+    font-size: larger;
+  }
 }
