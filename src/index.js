@@ -51,11 +51,10 @@ const main = async () => {
 
   let data = filterData(baseData, isSelected, sliderDay);
 
-  // Need to add lockdown to data.
-
   // Set up sizes
   const margin = { top: 50, right: 5, bottom: 60, left: 65 };
-  const w = Math.min(window.innerWidth, 800) - margin.left - margin.right;
+  const w =
+    0.95 * (Math.min(window.innerWidth, 800) - margin.left - margin.right);
   const h = Math.min(window.innerHeight, 800) - margin.top - margin.bottom;
 
   d3.select(".yScaleToggle")
