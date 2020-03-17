@@ -20,7 +20,7 @@
 
   <body>
     <header class="section">
-      <h1>COVID-19 CONFIRMED CASES CHART</h1>
+      <h1>COVID-19 CHARTS</h1>
     </header>
 
     <main>
@@ -38,30 +38,6 @@
         </small>
       </div>
       <hr />
-      <div class="row yValue">
-        <label for="yTotalCases">Total Cases</label>
-        <input
-          type="radio"
-          id="yTotalCases"
-          name="yvalue"
-          value="cases"
-          checked
-        />
-
-        <label for="yCurrentCases">Current Cases</label>
-        <input
-          type="radio"
-          id="yCurrentCases"
-          name="yvalue"
-          value="currentCases"
-        />
-
-        <label for="yRecovered">Recovered</label>
-        <input type="radio" id="yRecovered" name="yvalue" value="recovered" />
-
-        <label for="yDeaths">Deaths</label>
-        <input type="radio" id="yDeaths" name="yvalue" value="deaths" />
-      </div>
 
       <div id="wrapper">
         <div class="section countries flex">
@@ -72,6 +48,31 @@
             class="js-example-basic-multiple"
           >
           </select>
+        </div>
+
+        <div class="row yValue">
+          <label for="yTotalCases">Total Cases</label>
+          <input
+            type="radio"
+            id="yTotalCases"
+            name="yvalue"
+            value="cases"
+            checked
+          />
+
+          <label for="yCurrentCases">Current Cases</label>
+          <input
+            type="radio"
+            id="yCurrentCases"
+            name="yvalue"
+            value="currentCases"
+          />
+
+          <label for="yRecovered">Recovered</label>
+          <input type="radio" id="yRecovered" name="yvalue" value="recovered" />
+
+          <label for="yDeaths">Deaths</label>
+          <input type="radio" id="yDeaths" name="yvalue" value="deaths" />
         </div>
 
         <div>

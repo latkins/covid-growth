@@ -377,7 +377,7 @@ const main = async () => {
       .attr("y", d => {
         return yScale(d.series[d.series.length - 1][yValue]);
       })
-      .attr("dy", "0.5em")
+      .attr("dy", "-1em")
       .attr("fill", d => colourScale(d["Country/Region"]))
       .text(d => d.name);
   }

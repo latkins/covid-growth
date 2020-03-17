@@ -8,7 +8,7 @@ export default {
     file: "static/lib/index.js",
     format: "esm"
   },
-  plugins: [resolve(), terser()],
+  plugins: [resolve()],
   onwarn: function(warning, warn) {
     if (warning.code === "CIRCULAR_DEPENDENCY") return;
     warn(warning);
