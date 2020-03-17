@@ -3,46 +3,86 @@ import * as d3Fetch from "d3-fetch";
 import * as d3Scale from "d3-scale";
 import {
   hasCases,
-  getNDays,
-  getMaxCases,
-  tidyData,
+  removeZeros,
+  getMaxDays,
+  getExtentKey,
   dropCasesUnder,
   makeIsSelected,
-  processLockdown
+  processLockdown,
+  filterData,
+  mergeData
 } from "./utils";
 
-const dataUrl =
+const confirmedUrl =
   "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv";
+const deathsUrl =
+  "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv";
+const recoveredUrl =
+  "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv";
 
 const main = async () => {
   const threshold = 100;
 
   // Set up data
-  let data = await d3Fetch.csv(dataUrl);
-  data = data.map(tidyData);
-  data.forEach(d => (d.cases = dropCasesUnder(d.cases, threshold)));
-  data = data.filter(hasCases);
+  let confirmedData = await d3Fetch.csv(confirmedUrl);
+  let deathsData = await d3Fetch.csv(deathsUrl);
+  let recoveredData = await d3Fetch.csv(recoveredUrl);
 
-  let lockDown = await d3.csv("./lockdown-dates-03-14-2020.csv");
-  lockDown = processLockdown(lockDown);
+  let actionData = await d3.csv("./lockdown-dates-03-14-2020.csv");
+  actionData = processLockdown(actionData);
+
+  let baseData = mergeData(
+    confirmedData,
+    deathsData,
+    recoveredData,
+    actionData
+  );
+
+  baseData.forEach(d => (d.series = dropCasesUnder(d.series, threshold)));
+  baseData = baseData.filter(hasCases);
+
+  const isSelected = makeIsSelected(
+    baseData,
+    new URLSearchParams(window.location.search)
+  );
+
+  let sliderDay = getMaxDays(baseData);
+  let yIsLinear = true;
+
+  let data = filterData(baseData, isSelected, sliderDay);
 
   // Need to add lockdown to data.
 
   // Set up sizes
-  const margin = { top: 50, right: 5, bottom: 60, left: 60 };
+  const margin = { top: 50, right: 5, bottom: 60, left: 65 };
   const w = Math.min(window.innerWidth, 800) - margin.left - margin.right;
   const h = Math.min(window.innerHeight, 800) - margin.top - margin.bottom;
 
-  // Set up axes
-  const xScale = d3Scale
+  d3.select(".yScaleToggle")
+    .selectAll("input")
+    .on("change", function() {
+      yIsLinear = this.value === "Linear";
+      update(data, yIsLinear);
+    });
+
+  let yValue = "cases";
+  d3.select(".yValue")
+    .selectAll("input")
+    .on("change", function() {
+      yValue = this.value;
+      update(data, yIsLinear);
+    });
+
+  // Set up axes -- Use function.
+  let xScale = d3Scale
     .scaleLinear()
-    .domain([0, getNDays(data) + 8])
+    .domain([0, getMaxDays(data) + 8])
     .range([0, w + margin.right]);
-  const xAxis = d3.axisBottom(xScale);
+  let xAxis = d3.axisBottom(xScale);
 
   let yScale = d3Scale
     .scaleLinear()
-    .domain([threshold, getMaxCases(data, getNDays(data))])
+    .domain(getExtentKey(data, yValue))
     .range([h, 0]);
   let yAxis = d3
     .axisLeft(yScale)
@@ -65,18 +105,16 @@ const main = async () => {
     .append("input")
     .attr("type", "range")
     .attr("min", 7)
-    .attr("max", getNDays(data) + 8)
+    .attr("max", getMaxDays(baseData))
     .attr("step", 1)
-    .attr("value", getNDays(data) + 8)
+    .attr("value", getMaxDays(baseData))
     .on("input", function() {
-      rescale(this.value);
+      sliderDay = this.value;
+      data = filterData(baseData, isSelected, sliderDay);
+      update(data, yIsLinear);
     });
 
-  const isSelected = makeIsSelected(
-    data,
-    new URLSearchParams(window.location.search)
-  );
-  let filterData = Object.entries(isSelected).sort((a, b) => {
+  let orderedData = Object.entries(isSelected).sort((a, b) => {
     if (a[0] > b[0]) {
       return 1;
     } else {
@@ -84,7 +122,7 @@ const main = async () => {
     }
   });
 
-  filterData = await filterData.map(pair => {
+  orderedData = await orderedData.map(pair => {
     let [id, value] = pair;
     return { id: id, text: id, selected: value };
   });
@@ -92,7 +130,7 @@ const main = async () => {
   $(document).ready(function() {
     $(".js-example-basic-multiple").select2({
       placehold: "Choose a region",
-      data: filterData,
+      data: orderedData,
       closeOnSelect: false
     });
   });
@@ -137,6 +175,7 @@ const main = async () => {
 
   inner
     .append("text")
+    .attr("class", "yLabel")
     .attr("transform", "rotate(-90)")
     .attr("y", 0 - margin.left)
     .attr("x", 0 - h / 2)
@@ -144,194 +183,189 @@ const main = async () => {
     .style("text-anchor", "middle")
     .text("Cases");
 
-  let series;
-  if ("ontouchstart" in document) {
-    series = inner
-      .style("-webkit-tap-highlight-color", "transparent")
-      .append("g")
-      .selectAll("g")
-      .data(data)
-      .enter()
-      .append("g")
-      .attr("class", "countryGroup")
-      .classed("filtered", d => {
-        return !isSelected[d.name];
-      })
-      .on("touchstart", enter)
-      .on("touchend", exit)
-      .join("g");
-  } else {
-    series = inner
-      .append("g")
-      .attr("class", "graphInner")
-      .selectAll("g")
-      .data(data)
-      .enter()
-      .append("g")
-      .attr("class", "countryGroup")
-      .classed("filtered", d => {
-        return !isSelected[d.name];
-      })
-      .on("mouseenter", enter)
-      .on("mouseleave", exit)
-      .join("g");
-  }
+  const graphInner = inner
+    .style("-webkit-tap-highlight-color", "transparent")
+    .append("g")
+    .attr("class", "graphInner");
 
-  series
-    .append("path")
-    .attr("fill", "none")
-    .attr("class", "line")
-    .attr("stroke", d => colourScale(d["Country/Region"]))
-    .attr("d", d => line(d.cases.map(v => v.count)));
-
-  series
-    .append("text")
-    .attr("class", "countryText")
-    .attr("x", d => xScale(d.cases.length))
-    .attr("y", d => yScale(d.cases[d.cases.length - 1].count))
-    .attr("dy", "0.35em")
-    .text(d => d.name)
-    .clone(true)
-    .attr("fill", d => colourScale(d["Country/Region"]))
-    .attr("stroke", null);
-
-  //series
-  //.append("line")
-  //.attr("fill", "none")
-  //.attr("stroke", d => colourScale(d["Country/Region"]))
-  //.attr("class", "actionDate");
-
-  function rescale(maxDays) {
-    xScale.domain([0, maxDays]);
-    inner.select(".xAxis").call(xAxis);
-    yScale.domain([threshold, getMaxCases(data, maxDays)]);
-    inner.select(".yAxis").call(yAxis);
-
-    series.selectAll("path").attr("d", d => line(d.cases.map(v => v.count)));
-
-    series
-      .selectAll("text")
-      .attr("x", d => {
-        let idx = Math.min(d.cases.length - 1, maxDays);
-        return xScale(idx);
-      })
-      .attr("y", d => {
-        let idx = Math.min(d.cases.length - 1, maxDays);
-        return yScale(d.cases[idx].count);
-      });
-  }
+  update(data, yIsLinear);
 
   function getScales(data, yLinear) {
-    let maxDays = getMaxCases(data);
+    let maxDays = getMaxDays(data);
+    let [minY, maxY] = getExtentKey(data, yValue);
 
     if (yLinear) {
-      let yScale = d3Scale
+      yScale = d3Scale
         .scaleLinear()
-        .domain([threshold, maxDays])
+        .domain([minY, maxY])
         .range([h, 0]);
-      let yAxis = d3
-        .axisLeft(yScale)
-        .ticks(10)
-        .tickFormat(d3.format(","));
     } else {
-      let yScale = d3Scale
+      yScale = d3Scale
         .scaleLog()
-        .domain([threshold, maxDays])
+        .domain([minY, maxY])
         .range([h, 0]);
-      let yAxis = d3
-        .axisLeft(yScale)
-        .ticks(10)
-        .tickFormat(d3.format(","));
     }
-    const xScale = d3Scale
+    yAxis = d3
+      .axisLeft(yScale)
+      .ticks(10)
+      .tickFormat(d3.format(","));
+
+    xScale = d3Scale
       .scaleLinear()
-      .domain([0, getNDays(data) + 8])
+      .domain([0, maxDays])
       .range([0, w + margin.right]);
-    const xAxis = d3.axisBottom(xScale);
+    xAxis = d3.axisBottom(xScale);
 
     return [xScale, xAxis, yScale, yAxis];
   }
 
-  d3.select(".yScaleToggle")
-    .selectAll("input")
-    .on("change", function() {
-      //toggleYScale(this.value);
-      update(inner, data, this.value === "Linear");
-    });
-
-  function toggleYScale(value) {
-    let maxDays = [...xScale.domain()][1];
-
-    if (value === "Linear") {
-      yScale = d3Scale
-        .scaleLinear()
-        .domain([threshold, getMaxCases(data, maxDays)])
-        .range([h, 0]);
-      yAxis = d3
-        .axisLeft(yScale)
-        .ticks(10)
-        .tickFormat(d3.format(","));
-    } else {
-      yScale = d3Scale
-        .scaleLog()
-        .domain([threshold, getMaxCases(data, maxDays)])
-        .range([h, 0]);
-      yAxis = d3
-        .axisLeft(yScale)
-        .ticks(10)
-        .tickFormat(d3.format(","));
+  function update(data, yLinear) {
+    //filter 0 vals if log
+    if (!yLinear) {
+      data = removeZeros(data, yValue);
     }
+    data = data.filter(d => d.series.length > 0);
+
+    [xScale, xAxis, yScale, yAxis] = getScales(data, yLinear);
+
+    maxDays = getMaxDays(data);
 
     inner
       .select(".yAxis")
       .transition()
       .call(yAxis);
 
-    series
-      .selectAll("path")
+    inner
+      .select(".xAxis")
       .transition()
-      .attr("d", d => line(d.cases.map(v => v.count)));
+      .call(xAxis);
 
-    series
-      .selectAll("text")
-      .transition()
-      .attr("x", d => {
-        let idx = Math.min(d.cases.length - 1, maxDays);
-        return xScale(idx);
-      })
-      .attr("y", d => {
-        let idx = Math.min(d.cases.length - 1, maxDays);
-        return yScale(d.cases[idx].count);
-      });
-  }
-
-  function update(root, data, yLinear) {
-    [xScale, xAxis, yScale, yAxis] = getScales(data, yLinear);
-
-    console.log(root);
-
-    root
-      .select(".yAxis")
-      .transition()
-      .call(yAxis);
+    if (yValue === "cases") {
+      yLabelStr = "Cases";
+    } else if (yValue === "deaths") {
+      yLabelStr = "Deaths";
+    } else if (yValue === "currentCases") {
+      yLabelStr = "Current Cases";
+    } else if (yValue === "recovered") {
+      yLabelStr = "Recovered";
+    }
+    inner.select(".yLabel").text(yLabelStr);
 
     // Update searchbar with data here
 
-    let groups = root.selectAll("countryGroup").data(data);
-
-    // Remove unused
+    // Create new groups here
+    const groups = graphInner.selectAll(".countryGroup").data(data, d => d.id);
     groups.exit().remove();
 
-    let paths = groups
+    const genter = groups
       .enter()
-      .select("path")
-      .attr("d", d => line(d.cases.map(v => v.count)));
+      .append("g")
+      .attr("class", "countryGroup")
+      .attr("id", d => d.id)
+      .on("mouseenter", enter)
+      .on("mouseleave", exit)
+      .on("touchstart", enter)
+      .on("touchend", exit);
 
-    let texts = groups
-      .enter()
-      .selectAll("text")
-      .attr("x", d => xScale(d.cases.length))
-      .attr("y", d => yScale(d.cases[d.cases.length - 1].count));
+    genter.append("path").attr("class", "countryLine");
+    genter.append("text").attr("class", "countryText");
+    genter.append("line").attr("class", "intervention");
+    genter.append("text").attr("class", "interventionText");
+
+    subGroups = groups.merge(genter);
+
+    // Line
+    subGroups
+      .transition()
+      .select(".countryLine")
+      .attr("fill", "none")
+      .attr("stroke", d => colourScale(d["Country/Region"]))
+      .attr("d", d => line(d.series.map(v => v[yValue])));
+
+    // Intervention
+    subGroups
+      .filter(d => {
+        return d.series.filter(s => s.event !== null).length > 0;
+      })
+      .transition()
+      .select(".intervention")
+      .attr("fill", "none")
+      .attr("y1", yScale(yScale.domain()[0]))
+      .attr("y2", yScale(yScale.domain()[1]))
+      .attr("x1", d => {
+        let found = false;
+        let idx = null;
+        for (let i = 0; i < d.series.length; i++) {
+          day = d.series[i];
+          if (day.event !== null) {
+            idx = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          return xScale(idx);
+        }
+      })
+      .attr("x2", d => {
+        let found = false;
+        let idx = null;
+        for (let i = 0; i < d.series.length; i++) {
+          day = d.series[i];
+          if (day.event !== null) {
+            found = true;
+            idx = i;
+            break;
+          }
+        }
+        if (found) {
+          return xScale(idx);
+        }
+      })
+      .attr("stroke", d => colourScale(d["Country/Region"]));
+
+    // Intervention text
+    //subGroups
+    //.filter(d => {
+    //return d.series.filter(s => s.event !== null).length > 0;
+    //})
+    //.transition()
+    //.select(".interventionText")
+    //.attr("transform", "rotate(-90)")
+    //.attr("y", yScale(yScale.domain()[1] / 2))
+    //.attr("x", d => {
+    //let found = false;
+    //let idx = null;
+    //for (let i = 0; i < d.series.length; i++) {
+    //day = d.series[i];
+    //if (day.event !== null) {
+    //idx = i;
+    //found = true;
+    //break;
+    //}
+    //}
+    //if (found) {
+    //return xScale(idx);
+    //}
+    //});
+
+    //Country text
+    subGroups
+      .transition()
+      .select(".countryText")
+      .attr("x", d => {
+        let lastPos = xScale(d.series.length - 1);
+        if (w - lastPos < 100) {
+          return w - 100;
+        }
+        return lastPos;
+      })
+      .attr("y", d => {
+        return yScale(d.series[d.series.length - 1][yValue]);
+      })
+      .attr("dy", "0.5em")
+      .attr("fill", d => colourScale(d["Country/Region"]))
+      .text(d => d.name);
   }
 
   function filterRows(key, value) {
@@ -342,11 +376,11 @@ const main = async () => {
       params.delete(key);
     }
 
+    isSelected[key] = value;
+    data = filterData(baseData, isSelected, sliderDay);
+    update(data, yIsLinear);
+
     window.history.replaceState({}, "", `${location.pathname}?${params}`);
-    inner
-      .selectAll(".countryGroup")
-      .filter(d => d.name === key)
-      .classed("filtered", !value);
   }
 };
 
@@ -355,11 +389,17 @@ function enter(d, i) {
     .select("path")
     .classed("hoverHighlighted", true);
   d3.select(this)
+    .select("line")
+    .classed("hoverHighlighted", true);
+  d3.select(this)
     .selectAll("text")
     .classed("hoverHighlighted", true);
 }
 
 function exit(d, i) {
+  d3.select(this)
+    .select("line")
+    .classed("hoverHighlighted", false);
   d3.select(this)
     .select("path")
     .classed("hoverHighlighted", false);

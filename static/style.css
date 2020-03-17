@@ -27,7 +27,7 @@ footer {
   justify-content: center;
 }
 
-.line {
+.countryLine {
   stroke-width: 1.2;
   opacity: 0.8;
 }
@@ -36,6 +36,14 @@ footer {
   stroke-width: 1;
   opacity: 0.8;
   font-size: small;
+}
+
+.intervention {
+  opacity: 0.2
+}
+
+line.hoverHighlighted {
+  opacity: 1 !important;
 }
 
 text.hoverHighlighted {

@@ -17,7 +17,7 @@
     <div class="description">
       <p>
         Data is aligned such that day 0 is the first day with 100 or more
-        confirmed cases. Data from
+        confirmed cases. If present, vertical lines indicate Data from
         <a href="https://github.com/CSSEGISandData/COVID-19"
           >https://github.com/CSSEGISandData/COVID-19</a
         >.
@@ -39,6 +39,31 @@
 
         <label for="yLog">Log</label>
         <input type="radio" id="yLog" name="yscale" value="Log" />
+      </div>
+
+      <div class="row yValue">
+        <label for="yTotalCases">Total Cases</label>
+        <input
+          type="radio"
+          id="yTotalCases"
+          name="yvalue"
+          value="cases"
+          checked
+        />
+
+        <label for="yCurrentCases">Current Cases</label>
+        <input
+          type="radio"
+          id="yCurrentCases"
+          name="yvalue"
+          value="currentCases"
+        />
+
+        <label for="yRecovered">Recovered</label>
+        <input type="radio" id="yRecovered" name="yvalue" value="recovered" />
+
+        <label for="yDeaths">Deaths</label>
+        <input type="radio" id="yDeaths" name="yvalue" value="deaths" />
       </div>
 
       <div class="row">
