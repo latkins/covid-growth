@@ -13,17 +13,16 @@ body {
 body {
   background: #191b23;
   color: #e7e7e8;
-  font-family: "Quicksand", sans-serif;
+  font-family: "PT Mono", monospace;
   text-align: center;
+}
+
+main {
   margin: 0 5%;
 }
 
 a {
   color: #e5eaef;
-}
-
-small {
-  line-height: 70px;
 }
 
 hr {
@@ -43,16 +42,21 @@ hr {
 }
 
 .label {
-  font-weight: bold;
   padding: 0 10px;
 }
+
+input {
+  color: white;
+}
+
+/* countries selection */
 
 #filter {
   width: 100%;
 }
 
 label#filter {
-  width: 18%;
+  width: 22%;
 }
 
 ul {
@@ -73,8 +77,17 @@ ul {
   background-color: #a3aac2;
 }
 
+/* axis values and scales toggles */
+
 #axis_toggle {
   flex-wrap: wrap;
+}
+
+.yValue {
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+  align-items: center;
 }
 
 .yScaleToggle,
@@ -83,14 +96,16 @@ ul {
   align-items: center;
 }
 
+.yValue > *,
 .yScaleToggle > *,
 .xScaleToggle > * {
   padding: 0 7px;
 }
 
+.yValue > input,
 .yScaleToggle > input,
 .xScaleToggle > p {
-  margin-right: 10px;
+  margin-right: 20px;
 }
 
 /* Chart */
@@ -144,21 +159,45 @@ footer {
 }
 
 @media screen and (max-width: 650px) {
-  p {
-    font-size: larger;
+  h1 {
+    padding: 10px 0 5px 0;
+  }
+  .flex {
+    display: block;
   }
 
-  small {
-    line-height: normal;
+  .label {
+    font-weight: bold;
+    margin: 15px 0 8px 0;
+  }
+
+  .yScaleToggle,
+  .xScaleToggle {
+    margin: 0;
+  }
+
+  .yValue > *,
+  .yScaleToggle > *,
+  .xScaleToggle > * {
+    padding: 0;
+  }
+
+  .yValue > input,
+  .yScaleToggle > input,
+  .xScaleToggle > p {
+    margin-right: 15px;
   }
 
   label#filter {
-    width: 27%;
-    padding-left: 0;
+    width: 35%;
+    padding: 0;
   }
 
-  .axisLabel {
-    fill: #e5eaef;
-    font-size: larger;
+  .select2-container {
+    margin-top: 8px;
+  }
+
+  footer {
+    padding-bottom: 30px;
   }
 }
