@@ -5,6 +5,10 @@
   border-collapse: collapse;
 }
 
+#preview {
+  display: none;
+}
+
 html,
 body {
   width: 100%;
